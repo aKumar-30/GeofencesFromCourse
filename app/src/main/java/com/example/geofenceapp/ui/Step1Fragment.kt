@@ -64,7 +64,7 @@ class Step1Fragment : Fragment() {
     @SuppressLint("MissingPermission")
     private fun getCountryCodeFromCurrentLocation() {
         lifecycleScope.launch {
-            val placeFields = listOf(Place.Field.LAT_LNG)
+            val placeFields = listOf(Place.Field.LAT_LNG, Place.Field.ID)
             val request: FindCurrentPlaceRequest = FindCurrentPlaceRequest.newInstance(placeFields)
 
             val placeResponse = placesClient.findCurrentPlace(request)
@@ -75,6 +75,9 @@ class Step1Fragment : Fragment() {
                         val latLng = response.placeLikelihoods[0].place.latLng!!
                         val address = geoCoder.getFromLocation(latLng.latitude, latLng.longitude, 1)
                         sharedViewModel.geoCountryCode = address[0].countryCode
+                        Log.d("Step1Fragment", "address[0].locality is ${address[0].locality}")
+                        sharedViewModel.defaultLocality = address[0].getAddressLine(0) ?: " "
+                        sharedViewModel.defaultLocalityId = response.placeLikelihoods[0].place.id ?:" "
                     } else {
                         val exception = it.exception
                         if (exception is ApiException){

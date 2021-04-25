@@ -22,29 +22,29 @@ fun View.setVisibility(data: List<GeofenceEntity>){
     }
 }
 
-@BindingAdapter("handleMotionTransition")
-fun MotionLayout.handleMotionTransition(deleteImageView: ImageView){
-    deleteImageView.disable()
-    this.setTransitionListener(object: MotionLayout.TransitionListener{
-        override fun onTransitionTrigger(p0: MotionLayout?, p1: Int, p2: Boolean, p3: Float) {
-        }
-
-        override fun onTransitionStarted(p0: MotionLayout?, p1: Int, p2: Int) {
-        }
-
-        override fun onTransitionChange(p0: MotionLayout?, p1: Int, p2: Int, p3: Float) {
-        }
-
-        override fun onTransitionCompleted(motionLayout: MotionLayout?, transition: Int) {
-            if(motionLayout!=null && transition== R.id.start){
-                deleteImageView.disable()
-            }
-            else if (motionLayout!=null && transition==R.id.end){
-                deleteImageView.enable()
-            }
-        }
-    })
-}
+//@BindingAdapter("handleMotionTransition")
+//fun MotionLayout.handleMotionTransition(deleteImageView: ImageView){
+//    deleteImageView.disable()
+//    this.setTransitionListener(object: MotionLayout.TransitionListener{
+//        override fun onTransitionTrigger(p0: MotionLayout?, p1: Int, p2: Boolean, p3: Float) {
+//        }
+//
+//        override fun onTransitionStarted(p0: MotionLayout?, p1: Int, p2: Int) {
+//        }
+//
+//        override fun onTransitionChange(p0: MotionLayout?, p1: Int, p2: Int, p3: Float) {
+//        }
+//
+//        override fun onTransitionCompleted(motionLayout: MotionLayout?, transition: Int) {
+//            if(motionLayout!=null && transition== R.id.start){
+//                deleteImageView.disable()
+//            }
+//            else if (motionLayout!=null && transition==R.id.end){
+//                deleteImageView.enable()
+//            }
+//        }
+//    })
+//}
 
 @BindingAdapter("setSnapshot")
 fun ImageView.setSnapshot(snapshot: Bitmap){

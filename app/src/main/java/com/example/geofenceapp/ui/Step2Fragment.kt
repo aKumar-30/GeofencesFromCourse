@@ -64,6 +64,10 @@ class Step2Fragment : Fragment() {
         binding.lifecycleOwner = this
 
         checkInternetConnection()
+        if (sharedViewModel.defaultLocality!=" " && sharedViewModel.defaultLocalityId!=" "){
+            binding.geofenceNameLocationEt.setText(sharedViewModel.defaultLocality)
+            onCitySelected(sharedViewModel.defaultLocalityId)
+        }
 
         binding.predictionsRecyclerView.adapter = predictionAdapter
         binding.predictionsRecyclerView.layoutManager = LinearLayoutManager(context)

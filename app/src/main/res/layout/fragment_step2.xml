@@ -66,8 +66,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:drawableStart="@drawable/ic_search"
-                android:drawablePadding="16dp"
-                android:text="@{sharedViewModel.geoLocationName}" />
+                android:drawablePadding="16dp" />
+            <!--                android:text="@{sharedViewModel.geoLocationName}" -->
         </com.google.android.material.textfield.TextInputLayout>
 
         <TextView

@@ -42,6 +42,8 @@ private val geofenceRepository: GeofenceRepository
     private var geofencingClient = LocationServices.getGeofencingClient(app.applicationContext)
 
     var geoCountryCode = ""
+    var defaultLocality: String = " "
+    var defaultLocalityId: String = " "
     var geoName = "Default" //TODO MAKE BETTER
     var geoId = 0L
 

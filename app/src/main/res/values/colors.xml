@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="blue_200">#80b4ff</color>
+    <color name="blue_500">#4285F4</color>
+    <color name="blue_700">#0059c1</color>
+    <color name="teal_200">#4285F4</color>
+    <color name="teal_700">#0059c1</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <color name="red">#eb4f6f</color>
+    <color name="gray">#CCCCCC</color>
+
+    //Geofence Colors
+    <color name="background_out_geofence">#3074aef2</color>
+    <color name="stroke_out_geofence">#74aef2</color>
+    <color name="background_in_geofence">#300e62c4</color>
+    <color name="stroke_in_geofence">#0e62c4</color>
+    <color name="background_dwell_geofence">#35063469</color>
+    <color name="stroke_dwell_geofence">#063469</color>
+</resources>

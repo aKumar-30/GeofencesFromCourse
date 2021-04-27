@@ -48,6 +48,21 @@
         app:srcCompat="@drawable/ic_baseline_history_24"
         app:tint="@color/white" />
 
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/settings_fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:background="@color/view_state_background_color"
+        android:clickable="true"
+        android:focusable="true"
+        app:fabSize="mini"
+        app:layout_constraintBottom_toBottomOf="@+id/addGeofenceFab"
+        app:layout_constraintEnd_toStartOf="@+id/addGeofenceFab"
+        app:layout_constraintTop_toTopOf="@+id/addGeofenceFab"
+        app:srcCompat="@drawable/ic_baseline_settings_24"
+        app:tint="@color/white" />
+
     <TextView
         android:id="@+id/infoMessage_textView"
         android:layout_width="0dp"

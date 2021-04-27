@@ -3,6 +3,7 @@ package com.example.geofenceapp.ui
 import android.annotation.SuppressLint
 import android.content.res.Configuration
 import android.graphics.Bitmap
+import android.location.Geocoder
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -52,6 +53,14 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapLongClickLis
     private var allCircles: MutableList<Circle> = mutableListOf()
 
     private val sharedViewModel: SharedViewModel by activityViewModels()
+    private lateinit var geoCoder: Geocoder
+
+    private var legallyAdd = true
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        geoCoder = Geocoder(requireContext())
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -65,6 +74,10 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapLongClickLis
         }
         binding.viewGeoFencesFab.setOnClickListener{
             findNavController().navigate(R.id.action_mapsFragment_to_geofencesFragment)
+        }
+        binding.settingsFab.setOnClickListener {
+            val dialog = SettingsDialog()
+            dialog.show(childFragmentManager, null)
         }
         return binding.root
     }
@@ -124,7 +137,7 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapLongClickLis
     private fun toDoAtStart() {
         if(sharedViewModel.geoFenceReady){
             sharedViewModel.geoFenceReady = false
-            sharedViewModel.geoFencePrepared = true
+            sharedViewModel.geoFencePrepared.value = true
             displayInfoMessage()
             map.animateCamera(
                 CameraUpdateFactory.newLatLngZoom(sharedViewModel.geoLatLng, decideZoomLevel()),
@@ -238,26 +251,51 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapLongClickLis
 
     override fun onMapLongClick(location: LatLng?) {
         if (Permissions.hasBackgroundLocationPosition(requireContext())){
-            if (sharedViewModel.geoFencePrepared && location!=null){
-                setUpGeofence(location)
-            } else {
-                Toast.makeText(
-                    context,
-                    "You need to create a new geofence first",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        } else {
+            if (location != null){
+                if (sharedViewModel.geoFencePrepared.value == true){
+                    Log.d("MapsFragment", "in geofence prepared")
+                    setUpGeofence(location)
+                }
+                else if (!legallyAdd) {
+                    Toast.makeText(context, "Error: please wait until next geofence is added", Toast.LENGTH_SHORT).show()
+                }
+                else{
+                        Toast.makeText(
+                            context,
+                            "Creating a new geofence",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        Log.d("MapsFragment", "in geofence not prepared")
+                        sharedViewModel.setVariablesForPreset(geoCoder, location, viewLifecycleOwner)
+                        sharedViewModel.geoFencePrepared.observeOnce(viewLifecycleOwner, {
+                            if (it){
+                                Log.d("MapsFragment","in observering thing about to call the good stuff")
+                                setUpGeofence(location)
+                            } else {
+                                Toast.makeText(context, "Error: please try another location", Toast.LENGTH_SHORT).show()
+                            }
+                        })
+                    }
+                }
+        }
+        else {
             Permissions.requestBackgroundLocationPosition(this)
         }
     }
-
     private fun setUpGeofence(location: LatLng) {
         lifecycleScope.launch {
             if (sharedViewModel.checkDeviceLocationSettings(requireContext())){
                 binding.viewGeoFencesFab.disable()
                 binding.addGeofenceFab.disable()
+                binding.settingsFab.disable()
                 binding.geofenceProgressBar.enable()
+                legallyAdd = false
+                map.uiSettings.apply { //so nobody can move map before screenshot
+                    isZoomGesturesEnabled = false
+                    isMyLocationButtonEnabled = false
+                    isScrollGesturesEnabled = false
+                    isScrollGesturesEnabledDuringRotateOrZoom = false
+                }
 
                 drawMarker(location, sharedViewModel.geoName)
                 drawCircle(location, sharedViewModel.geoRadius, sharedViewModel.geoId)
@@ -265,6 +303,13 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapLongClickLis
 
                 delay(2500)
                 map.snapshot(this@MapsFragment)
+
+                map.uiSettings.apply { //so nobody can move map before screenshot
+                    isZoomGesturesEnabled = true
+                    isMyLocationButtonEnabled = true
+                    isScrollGesturesEnabled = true
+                    isScrollGesturesEnabledDuringRotateOrZoom = true
+                }
 
                 delay(2000)
                 sharedViewModel.addGeofenceToDatabase(location)
@@ -275,7 +320,10 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapLongClickLis
                 sharedViewModel.resetSharedValues()
                 binding.viewGeoFencesFab.enable()
                 binding.addGeofenceFab.enable()
+                binding.settingsFab.enable()
                 binding.geofenceProgressBar.disable()
+
+                legallyAdd = true
             } else {
                 Toast.makeText(
                     context,

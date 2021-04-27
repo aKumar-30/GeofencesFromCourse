@@ -6,9 +6,11 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
 import com.example.geofenceapp.R
 import com.example.geofenceapp.databinding.FragmentStep3Binding
+import com.example.geofenceapp.util.ExtensionFunctions.observeOnce
 import com.example.geofenceapp.viewmodel.SharedViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -26,6 +28,9 @@ class Step3Fragment : Fragment() {
         binding.sharedViewModel = sharedViewModel
         binding.lifecycleOwner = this
 
+        sharedViewModel.readDefaultRadius.observeOnce(viewLifecycleOwner, Observer { defaultRadius ->
+            binding.slider.value = defaultRadius
+        })
         binding.step3Back.setOnClickListener{
             findNavController().navigate(R.id.action_step3Fragment_to_step2Fragment)
         }

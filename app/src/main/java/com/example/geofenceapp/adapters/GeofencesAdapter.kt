@@ -1,13 +1,24 @@
 package com.example.geofenceapp.adapters
 
+import android.content.Context
+import android.text.InputType
 import android.util.Log
+import android.view.KeyEvent
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
+import android.widget.EditText
+import android.widget.TextView
+import androidx.core.content.ContextCompat.getSystemService
+import androidx.core.widget.doOnTextChanged
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.findNavController
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.example.geofenceapp.data.GeofenceEntity
+import com.example.geofenceapp.data.GeofenceUpdate
 import com.example.geofenceapp.databinding.GeofencesRowLayoutBinding
 import com.example.geofenceapp.ui.GeofencesFragmentDirections
 import com.example.geofenceapp.util.MyDiffUtil
@@ -16,7 +27,6 @@ import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.launch
 
 class GeofencesAdapter (private val sharedViewModel: SharedViewModel): RecyclerView.Adapter<GeofencesAdapter.MyViewHolder>() {
-
     var geofenceEntities = emptyList<GeofenceEntity>()
 
     val swipeHandler = object : SwipeToDeleteCallback(sharedViewModel.app) {
@@ -55,8 +65,37 @@ class GeofencesAdapter (private val sharedViewModel: SharedViewModel): RecyclerV
             val action = GeofencesFragmentDirections.actionGeofencesFragmentToMapsFragment(geofenceEntities[position])
             holder.itemView.findNavController().navigate(action)
         }
-    }
 
+//        holder.binding.nameEditTextView.doOnTextChanged { text, start, before, count -> //TODO: Make more efficient
+//            if (text.toString()!=geofenceEntities[position].name){
+//                Log.d("GeofencesAdapter", "in on text chanfed interestng")
+
+//            }
+//        }
+
+        holder.binding.nameEditTextView.setOnEditorActionListener( object: TextView.OnEditorActionListener { //TODO: Make sure it covers all ways
+            override fun onEditorAction(v: TextView?, actionId: Int, event: KeyEvent?): Boolean {
+                if (actionId == EditorInfo.IME_ACTION_SEARCH || actionId == EditorInfo.IME_ACTION_DONE || event != null &&
+                    event.action == KeyEvent.ACTION_DOWN && event.keyCode == KeyEvent.KEYCODE_ENTER) {
+                    if (event == null || !event.isShiftPressed){
+                        holder.binding.nameEditTextView.inputType = InputType.TYPE_NULL
+                        val text = holder.binding.nameEditTextView.text.toString()
+                        if (text != geofenceEntities[position].name){
+                            val geofenceUpdate = GeofenceUpdate()
+                            geofenceUpdate.id = geofenceEntities[position].id
+                            geofenceUpdate.name = holder.binding.nameEditTextView.text.toString()
+                            sharedViewModel.updateGeofence(geofenceUpdate)
+                            geofenceEntities[position].name = text
+                            // Only runs if there is a view that is currently focused
+                        }
+                        return true; // consume.
+                    }
+                }
+                return false; // pass on to other listeners.
+            }
+        }
+        )
+    }
     private fun removeItem(holder: MyViewHolder, position: Int) {
         sharedViewModel.viewModelScope.launch {
             val geofenceStopped =

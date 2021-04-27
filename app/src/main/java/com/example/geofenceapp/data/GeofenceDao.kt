@@ -12,6 +12,8 @@ interface GeofenceDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertGeofence(geofenceEntity: GeofenceEntity)
 
+    @Update(entity = GeofenceEntity::class)
+    suspend fun updateGeofence(obj: GeofenceUpdate)
 //    @RawQuery
 //    suspend fun readGeofencesWithId(query: SupportSQLiteQuery?): Flow<MutableList<GeofenceEntity>>?
 //

@@ -1,29 +1,21 @@
 package com.example.geofenceapp.ui
 
-import android.annotation.SuppressLint
 import android.location.Geocoder
 import android.os.Bundle
-import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.geofenceapp.R
 import com.example.geofenceapp.databinding.FragmentStep1Binding
 import com.example.geofenceapp.viewmodel.SharedViewModel
 import com.example.geofenceapp.viewmodel.Step1ViewModel
-import com.google.android.gms.common.api.ApiException
 import com.google.android.libraries.places.api.Places
-import com.google.android.libraries.places.api.model.Place
-import com.google.android.libraries.places.api.net.FindCurrentPlaceRequest
 import com.google.android.libraries.places.api.net.PlacesClient
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
-import java.io.IOException
 
 @AndroidEntryPoint
 class Step1Fragment : Fragment() {
@@ -56,41 +48,13 @@ class Step1Fragment : Fragment() {
         binding.step1Back.setOnClickListener{
             findNavController().navigate(R.id.action_step1Fragment_to_mapFragment)
         }
-        getCountryCodeFromCurrentLocation()
-
-        return binding.root
-    }
-
-    @SuppressLint("MissingPermission")
-    private fun getCountryCodeFromCurrentLocation() {
-        lifecycleScope.launch {
-            val placeFields = listOf(Place.Field.LAT_LNG, Place.Field.ID)
-            val request: FindCurrentPlaceRequest = FindCurrentPlaceRequest.newInstance(placeFields)
-
-            val placeResponse = placesClient.findCurrentPlace(request)
-            placeResponse.addOnCompleteListener{
-                try {
-                    if (it.isSuccessful){
-                        val response = it.result
-                        val latLng = response.placeLikelihoods[0].place.latLng!!
-                        val address = geoCoder.getFromLocation(latLng.latitude, latLng.longitude, 1)
-                        sharedViewModel.geoCountryCode = address[0].countryCode
-                        Log.d("Step1Fragment", "address[0].locality is ${address[0].locality}")
-                        sharedViewModel.defaultLocality = address[0].getAddressLine(0) ?: " "
-                        sharedViewModel.defaultLocalityId = response.placeLikelihoods[0].place.id ?:" "
-                    } else {
-                        val exception = it.exception
-                        if (exception is ApiException){
-                            Log.e("Step1Fragment", exception.statusCode.toString())
-                        }
-                    }
-                } catch (e: IOException){
-                } finally {
-                    enableNextButton()
-                }
-            }
+        try {
+            sharedViewModel.getCountryCodeFromCurrentLocation(placesClient, geoCoder)
+        } catch (e: Exception){
             enableNextButton()
         }
+        enableNextButton()
+        return binding.root
     }
 
     private fun enableNextButton(){

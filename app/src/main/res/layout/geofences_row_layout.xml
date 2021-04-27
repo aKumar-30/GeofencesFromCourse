@@ -12,39 +12,58 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingBottom="2dp"
-        android:paddingTop="2dp">
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp">
 
         <View
             android:id="@+id/white_background"
             android:layout_width="wrap_content"
-            android:layout_height="130dp"
+            android:layout_height="135dp"
             android:background="@color/white"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
         <ImageView
             android:id="@+id/snapshot_imageView"
             setSnapshot="@{geofencesEntity.snapshot}"
-            android:layout_width="130dp"
-            android:layout_height="130dp"
+            android:layout_width="135dp"
+            android:layout_height="135dp"
             android:scaleType="centerCrop"
             app:layout_constraintBottom_toBottomOf="@id/white_background"
             app:layout_constraintStart_toStartOf="@id/white_background"
             app:layout_constraintTop_toTopOf="@id/white_background"
             tools:srcCompat="@tools:sample/avatars" />
 
-        <TextView
-            android:id="@+id/name_textView"
+        <!--        <TextView-->
+        <!--            android:id="@+id/name_textView"-->
+        <!--            android:layout_width="0dp"-->
+        <!--            android:layout_height="wrap_content"-->
+        <!--            android:layout_marginStart="8dp"-->
+        <!--            android:layout_marginTop="8dp"-->
+        <!--            android:layout_marginEnd="8dp"-->
+        <!--            android:maxLines="1"-->
+        <!--            android:text="@{geofencesEntity.name}"-->
+        <!--            android:textColor="@color/black"-->
+        <!--            android:textSize="20sp"-->
+        <!--            android:textStyle="bold"-->
+        <!--            app:layout_constraintEnd_toEndOf="@id/white_background"-->
+        <!--            app:layout_constraintStart_toEndOf="@+id/snapshot_imageView"-->
+        <!--            app:layout_constraintTop_toTopOf="@id/white_background"-->
+        <!--            tools:text="Charlotte Geofence" />-->
+
+        <EditText
+            android:id="@+id/name_editTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:text="@{geofencesEntity.name}"
-            android:maxLines="1"
             android:layout_marginTop="8dp"
             android:layout_marginEnd="8dp"
+            android:inputType="textShortMessage|textPersonName|textAutoComplete|textEmailAddress"
+            android:maxLength="25"
+            android:maxLines="1"
+            android:text="@{geofencesEntity.name}"
             android:textColor="@color/black"
             android:textSize="20sp"
             android:textStyle="bold"
@@ -53,6 +72,7 @@
             app:layout_constraintTop_toTopOf="@id/white_background"
             tools:text="Charlotte Geofence" />
 
+
         <TextView
             android:id="@+id/locationTitle_textView"
             android:layout_width="wrap_content"
@@ -60,7 +80,7 @@
             android:text="@string/location1"
             android:textSize="13sp"
             app:layout_constraintBottom_toBottomOf="@+id/location_textView"
-            app:layout_constraintStart_toStartOf="@+id/name_textView"
+            app:layout_constraintStart_toStartOf="@+id/name_editTextView"
             app:layout_constraintTop_toTopOf="@+id/location_textView" />
 
         <TextView
@@ -85,7 +105,7 @@
             android:id="@+id/location_textView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="4dp"
             android:layout_marginEnd="7dp"
             android:maxLines="2"
             android:text="@{geofencesEntity.location}"
@@ -93,7 +113,7 @@
             android:textSize="13sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="@+id/coordinates_textView"
-            app:layout_constraintTop_toBottomOf="@+id/name_textView"
+            app:layout_constraintTop_toBottomOf="@+id/name_editTextView"
             tools:text="San Jose International Airport" />
 
         <TextView
@@ -103,7 +123,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="24dp"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="2dp"
             android:textSize="13sp"
             app:layout_constraintStart_toEndOf="@+id/coordinatesTitle_textView"
             app:layout_constraintTop_toBottomOf="@+id/location_textView"
@@ -113,12 +133,11 @@
             android:id="@+id/radius_textView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="2dp"
             android:text="@{String.valueOf(geofencesEntity.radius)}"
             android:textSize="13sp"
             app:layout_constraintStart_toStartOf="@+id/coordinates_textView"
             app:layout_constraintTop_toBottomOf="@+id/coordinates_textView"
             tools:text="150 m" />
-
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

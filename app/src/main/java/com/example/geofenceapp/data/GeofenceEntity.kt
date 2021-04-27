@@ -14,12 +14,12 @@ import kotlinx.parcelize.Parcelize
 @Parcelize
 class GeofenceEntity(
     val geoId: Long,
-    val name: String,
+    var name: String,
     val location: String,
     val latitude: Double,
     val longitude: Double,
     val radius: Float,
-    val snapshot: Bitmap
+    val snapshot: Bitmap?
 ): Parcelable {
     @IgnoredOnParcel
     @PrimaryKey(autoGenerate = true)

@@ -1,10 +1,13 @@
 package com.example.geofenceapp.ui
 
 import android.os.Bundle
+import android.view.KeyEvent
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
+import android.widget.TextView
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -15,7 +18,7 @@ import com.example.geofenceapp.viewmodel.SharedViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class GeofencesFragment : Fragment() {
+class GeofencesFragment : Fragment(){
     private var _binding: FragmentGeofencesBinding? = null
     private val binding get() = _binding!!
 

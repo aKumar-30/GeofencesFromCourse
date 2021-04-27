@@ -8,9 +8,14 @@ import javax.inject.Inject
 class GeofenceRepository @Inject constructor(private val geofenceDao: GeofenceDao){
     val readGeofences: Flow<MutableList<GeofenceEntity>> = geofenceDao.readGeofences()
 
-    suspend fun readGeofencesWithQuery(currentGeoId: Double): Flow<MutableList<GeofenceEntity>>{
+    fun readGeofencesWithQuery(currentGeoId: Double): Flow<MutableList<GeofenceEntity>>{
         return geofenceDao.readGeofencesWithId(currentGeoId)
     }
+
+    suspend fun updateGeofence(obj: GeofenceUpdate) {
+        return geofenceDao.updateGeofence(obj)
+    }
+
     suspend fun insertGeofence(geofenceEntity: GeofenceEntity){
         geofenceDao.insertGeofence(geofenceEntity)
     }

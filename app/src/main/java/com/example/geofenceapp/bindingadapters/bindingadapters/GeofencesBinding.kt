@@ -2,10 +2,12 @@ package com.example.geofenceapp.bindingadapters.bindingadapters
 
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
+import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.constraintlayout.motion.widget.MotionLayout
+import androidx.core.content.ContextCompat
 import androidx.databinding.BindingAdapter
 import coil.load
 import com.example.geofenceapp.R
@@ -47,8 +49,14 @@ fun View.setVisibility(data: List<GeofenceEntity>){
 //}
 
 @BindingAdapter("setSnapshot")
-fun ImageView.setSnapshot(snapshot: Bitmap){
-    this.load(snapshot)
+fun ImageView.setSnapshot(snapshot: Bitmap?){
+    if (snapshot != null) {
+        this.load(snapshot)
+    }
+    else {
+        Log.d("GeofenceBinding", "snaoshot is null")
+        this.load(ContextCompat.getDrawable(context, R.drawable.ic_placeholder))
+    }
 }
 
 @SuppressLint("SetTextI18n")

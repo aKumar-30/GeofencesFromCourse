@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="?attr/dialogPreferredPadding">
+
+        <com.google.android.material.slider.Slider
+            android:id="@+id/slider2"
+            updateSettingsSliderTextView="@{sliderValueTextView2}"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:stepSize="500.0"
+            android:value="500.0"
+            android:valueFrom="500.0"
+            android:valueTo="10000.0"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@+id/slider_value_textView2"
+            app:layout_constraintTop_toBottomOf="@+id/slider_value_textView2">
+
+        </com.google.android.material.slider.Slider>
+
+        <TextView
+            android:id="@+id/slider_value_textView2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/_500_0_m"
+            android:textAlignment="center"
+            android:textColor="@color/black"
+            android:textSize="37sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/geofence_radiusDescription2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/choose_a_default_radius_for_future_geofences"
+            android:textAlignment="center"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="@+id/slider2"
+            app:layout_constraintStart_toStartOf="@+id/slider2"
+            app:layout_constraintTop_toBottomOf="@+id/slider2" />
+
+        <Button
+            android:id="@+id/cancelButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="16dp"
+            android:text="@android:string/cancel"
+            app:layout_constraintBaseline_toBaselineOf="@+id/okButton"
+            app:layout_constraintEnd_toStartOf="@+id/okButton" />
+
+        <Button
+            android:id="@+id/okButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@android:string/ok"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/geofence_radiusDescription2" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

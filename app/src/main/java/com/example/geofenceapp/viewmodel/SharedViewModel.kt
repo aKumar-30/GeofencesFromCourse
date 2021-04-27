@@ -6,29 +6,33 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.location.Geocoder
 import android.location.LocationManager
 import android.os.Build
 import android.provider.Settings
 import android.util.Log
-import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.asLiveData
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import com.example.geofenceapp.broadcastreceiver.GeofenceBroadcastReceiver
 import com.example.geofenceapp.data.DataStoreRepository
 import com.example.geofenceapp.data.GeofenceEntity
 import com.example.geofenceapp.data.GeofenceRepository
+import com.example.geofenceapp.data.GeofenceUpdate
+import com.example.geofenceapp.util.Constants.PREFERENCE_DEFAULT_RADIUS_DEFAULT
+import com.example.geofenceapp.util.ExtensionFunctions.observeOnce
 import com.example.geofenceapp.util.Permissions
+import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingRequest
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.api.net.FindCurrentPlaceRequest
+import com.google.android.libraries.places.api.net.PlacesClient
 import com.google.maps.android.SphericalUtil
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.math.sqrt
@@ -53,7 +57,9 @@ private val geofenceRepository: GeofenceRepository
 
     var geoCitySelected: Boolean = false
     var geoFenceReady: Boolean = false
-    var geoFencePrepared: Boolean = false
+    private var _geoFencePrepared = MutableLiveData(false)
+    val geoFencePrepared get()=_geoFencePrepared
+
     var geoSnapshot: Bitmap? = null
 
     var geofenceRemoved = false
@@ -68,17 +74,97 @@ private val geofenceRepository: GeofenceRepository
         geoSnapshot = null
         geoCitySelected = false
         geoFenceReady = false
-        geoFencePrepared = false
+        geoFencePrepared.value = false
         geofenceRemoved = false
     }
+    //Places API
+    @SuppressLint("MissingPermission")
+    fun getCountryCodeFromCurrentLocation(placesClient: PlacesClient, geoCoder: Geocoder) {
+        viewModelScope.launch {
+            val placeFields = listOf(Place.Field.LAT_LNG, Place.Field.ID)
+            val request: FindCurrentPlaceRequest = FindCurrentPlaceRequest.newInstance(placeFields)
 
+            val placeResponse = placesClient.findCurrentPlace(request)
+            placeResponse.addOnCompleteListener{
+                if (it.isSuccessful){
+                    val response = it.result
+                    val latLng = response.placeLikelihoods[0].place.latLng!!
+                    val address = geoCoder.getFromLocation(latLng.latitude, latLng.longitude, 1)
+                    geoCountryCode = address[0].countryCode
+                    Log.d("Step1Fragment", "address[0].locality is ${address[0].locality}")
+                    defaultLocality = address[0].getAddressLine(0) ?: " "
+                    defaultLocalityId = response.placeLikelihoods[0].place.id ?:" "
+                } else {
+                    val exception = it.exception
+                    if (exception is ApiException){
+                        Log.e("Step1Fragment", exception.statusCode.toString())
+                    }
+                }
+            }
+
+        }
+    }
+    @SuppressLint("MissingPermission")
+    fun setVariablesForPreset(
+        geoCoder: Geocoder,
+        location: LatLng,
+        viewLifecycleOwner: LifecycleOwner
+    ) {
+        viewModelScope.launch () {
+            val address = geoCoder.getFromLocation(location.latitude, location.longitude, 1)
+            if (address != null){
+                geoId = System.currentTimeMillis()
+                geoName = if (address[0].subLocality!=null){
+                    val x = "Geofence " + address[0].subLocality
+                    if (x.length > 25)
+                        x.substring(0, 25)
+                    else
+                        x
+                } else if(address[0].locality!=null){
+                    val x = "Geofence " + address[0].locality
+                    Log.d("SharedVIewModel","x is $x")
+                    if (x.length > 25)
+                        x.substring(0, 25)
+                    else
+                        x
+                } else {
+                    "Unknown Geofence"
+                }
+                geoCountryCode= address[0].countryCode
+                geoLocationName = if(address[0].subLocality!= null)
+                    address[0].subLocality
+                    else if (address[0].locality!=null)
+                        address[0].locality
+                    else
+                        "Unknown location"
+                geoLatLng= location
+                geoRadius = getDefaultRadius(viewLifecycleOwner)
+                geoCitySelected = true
+                geoFenceReady = false
+                geofenceRemoved = false
+
+                geoFencePrepared.value = true //Must be done for observeOnce to work
+            } else {
+                geoFencePrepared.value = false
+            }
+        }
+    }
     //DataStore
     val readFirstLaunch: LiveData<Boolean> = dataStoreRepository.readFirstLaunch.asLiveData()
 
     fun saveFirstLaunch (firstLaunch: Boolean) = viewModelScope.launch (Dispatchers.IO) {
         dataStoreRepository.saveFirstLaunch(firstLaunch)
     }
+    val readDefaultRadius: LiveData<Float> = dataStoreRepository.readDefaultRadius.asLiveData()
 
+    fun saveDefaultRadius (defaultRadius: Float) = viewModelScope.launch (Dispatchers.IO) {
+        dataStoreRepository.saveDefaultRadius(defaultRadius)
+    }
+    private fun getDefaultRadius(viewLifecycleOwner: LifecycleOwner){
+       return  readDefaultRadius.observeOnce(viewLifecycleOwner, Observer {
+           geoRadius = it
+       })
+    }
     //Database
     val readGeofences: LiveData<MutableList<GeofenceEntity>> = geofenceRepository.readGeofences.asLiveData()
     var readGeofencesWithQuery: LiveData<MutableList<GeofenceEntity>>? = null
@@ -97,6 +183,12 @@ private val geofenceRepository: GeofenceRepository
     fun deleteGeofence (geofenceEntity: GeofenceEntity){
         viewModelScope.launch (Dispatchers.IO){
             geofenceRepository.deleteGeofence(geofenceEntity)
+        }
+    }
+
+    fun updateGeofence(obj: GeofenceUpdate) {
+        viewModelScope.launch (Dispatchers.IO){
+            geofenceRepository.updateGeofence(obj)
         }
     }
 
@@ -170,7 +262,7 @@ private val geofenceRepository: GeofenceRepository
         }
     }
 
-    fun getBounds(center: LatLng, radius: Float): LatLngBounds{
+    fun getBounds(center: LatLng, radius: Float): LatLngBounds {
         val southwestPoint = getSouthwest(center, radius)
         val northeastCorner = getNortheast(center, radius)
         return LatLngBounds(southwestPoint, northeastCorner)
@@ -191,7 +283,7 @@ private val geofenceRepository: GeofenceRepository
             location.latitude,
             location.longitude,
             geoRadius,
-            geoSnapshot!!
+            geoSnapshot
         )
         insertGeofence(geofenceEntity)
     }

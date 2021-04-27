@@ -6,6 +6,8 @@ object Constants {
 
     const val PREFERENCE_NAME = "geofence_preference"
     const val PREFERENCE_FIRST_LAUNCH = "firstLaunch"
+    const val PREFERENCE_DEFAULT_RADIUS = "defaultRadius"
+    const val PREFERENCE_DEFAULT_RADIUS_DEFAULT = 500f
 
     const val DATABASE_TABLE_NAME = "geofence_table"
     const val DATABASE_NAME = "geofence_db"

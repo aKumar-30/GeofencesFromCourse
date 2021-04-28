@@ -1,19 +1,12 @@
 package com.example.geofenceapp.adapters
 
-import android.content.Context
 import android.text.InputType
 import android.util.Log
 import android.view.KeyEvent
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
-import android.view.inputmethod.InputMethodManager
-import android.widget.EditText
 import android.widget.TextView
-import androidx.core.content.ContextCompat.getSystemService
-import androidx.core.widget.doOnTextChanged
-import androidx.lifecycle.viewModelScope
 import androidx.navigation.findNavController
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
@@ -24,6 +17,7 @@ import com.example.geofenceapp.ui.GeofencesFragmentDirections
 import com.example.geofenceapp.util.MyDiffUtil
 import com.example.geofenceapp.viewmodel.SharedViewModel
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
 class GeofencesAdapter (private val sharedViewModel: SharedViewModel): RecyclerView.Adapter<GeofencesAdapter.MyViewHolder>() {
@@ -88,16 +82,16 @@ class GeofencesAdapter (private val sharedViewModel: SharedViewModel): RecyclerV
                             geofenceEntities[position].name = text
                             // Only runs if there is a view that is currently focused
                         }
-                        return true; // consume.
+                        return true // consume.
                     }
                 }
-                return false; // pass on to other listeners.
+                return false // pass on to other listeners.
             }
         }
         )
     }
     private fun removeItem(holder: MyViewHolder, position: Int) {
-        sharedViewModel.viewModelScope.launch {
+        GlobalScope.launch{
             val geofenceStopped =
                 sharedViewModel.stopGeofence(listOf(geofenceEntities[position].geoId))
             if (geofenceStopped){
@@ -113,7 +107,7 @@ class GeofencesAdapter (private val sharedViewModel: SharedViewModel): RecyclerV
     private fun showSnackBar(holder: MyViewHolder, removedItems: GeofenceEntity) {
         Snackbar.make(
             holder.itemView,
-            "Removed" + removedItems.name,
+            "Removed: " + removedItems.name,
             Snackbar.LENGTH_LONG
         ).setAction("Undo"){
             sharedViewModel.insertGeofence(removedItems)

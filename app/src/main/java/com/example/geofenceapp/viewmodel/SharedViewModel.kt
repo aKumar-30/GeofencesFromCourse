@@ -33,6 +33,7 @@ import com.google.maps.android.SphericalUtil
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.math.sqrt
@@ -66,9 +67,9 @@ private val geofenceRepository: GeofenceRepository
 
     fun resetSharedValues(){
         geoId = 0
-        geoName = "Default"
+        geoName = "Default Geofence"
         geoCountryCode=""
-        geoLocationName = "Search a city"
+        geoLocationName = "Search a location"
         geoLatLng=LatLng(0.0, 0.0)
         geoRadius = 500f
         geoSnapshot = null
@@ -108,9 +109,8 @@ private val geofenceRepository: GeofenceRepository
     fun setVariablesForPreset(
         geoCoder: Geocoder,
         location: LatLng,
-        viewLifecycleOwner: LifecycleOwner
     ) {
-        viewModelScope.launch () {
+        viewModelScope.launch {
             val address = geoCoder.getFromLocation(location.latitude, location.longitude, 1)
             if (address != null){
                 geoId = System.currentTimeMillis()
@@ -137,8 +137,9 @@ private val geofenceRepository: GeofenceRepository
                         address[0].locality
                     else
                         "Unknown location"
+                Log.d("SharedViewModel", "geoLocationname is $geoLocationName")
                 geoLatLng= location
-                geoRadius = getDefaultRadius(viewLifecycleOwner)
+                geoRadius = getDefaultRadius()
                 geoCitySelected = true
                 geoFenceReady = false
                 geofenceRemoved = false
@@ -160,10 +161,14 @@ private val geofenceRepository: GeofenceRepository
     fun saveDefaultRadius (defaultRadius: Float) = viewModelScope.launch (Dispatchers.IO) {
         dataStoreRepository.saveDefaultRadius(defaultRadius)
     }
-    private fun getDefaultRadius(viewLifecycleOwner: LifecycleOwner){
-       return  readDefaultRadius.observeOnce(viewLifecycleOwner, Observer {
-           geoRadius = it
-       })
+    private fun getDefaultRadius(): Float{
+        Log.d("SharedViewModel", "readDefaultRadius: ${readDefaultRadius.value}")
+       return  readDefaultRadius.value?: PREFERENCE_DEFAULT_RADIUS_DEFAULT
+    }
+    fun readValues(viewLifecycleOwner: LifecycleOwner) {
+        readDefaultRadius.observeOnce(viewLifecycleOwner, Observer { defaultRadius ->
+            geoRadius = defaultRadius
+        })
     }
     //Database
     val readGeofences: LiveData<MutableList<GeofenceEntity>> = geofenceRepository.readGeofences.asLiveData()

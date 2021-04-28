@@ -25,4 +25,6 @@
     <string name="radius">Radius</string>
     <string name="no_geofence_found">No Geofence found</string>
     <string name="choose_a_default_radius_for_future_geofences">Choose a default radius for future geofences</string>
+    <string name="enters"><u>Enters</u></string>
+    <string name="dwells"><u>Dwells</u></string>
 </resources>

@@ -1,6 +1,7 @@
 package com.example.geofenceapp.ui
 
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -10,6 +11,7 @@ import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
 import com.example.geofenceapp.R
 import com.example.geofenceapp.databinding.FragmentStep3Binding
+import com.example.geofenceapp.util.Constants.PREFERENCE_DEFAULT_RADIUS_DEFAULT
 import com.example.geofenceapp.util.ExtensionFunctions.observeOnce
 import com.example.geofenceapp.viewmodel.SharedViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -28,14 +30,15 @@ class Step3Fragment : Fragment() {
         binding.sharedViewModel = sharedViewModel
         binding.lifecycleOwner = this
 
-        sharedViewModel.readDefaultRadius.observeOnce(viewLifecycleOwner, Observer { defaultRadius ->
-            binding.slider.value = defaultRadius
-        })
+//        sharedViewModel.readDefaultRadius.observeOnce(viewLifecycleOwner, Observer { defaultRadius ->
+//            binding.slider.value = defaultRadius
+//        })
         binding.step3Back.setOnClickListener{
             findNavController().navigate(R.id.action_step3Fragment_to_step2Fragment)
         }
         binding.step3Done.setOnClickListener{
             sharedViewModel.geoRadius = binding.slider.value
+            Log.d("Step3Fragment", "sharedViewModel.geoRadius: ${binding.slider.value}")
             sharedViewModel.geoFenceReady = true
             findNavController().navigate(R.id.action_step3Fragment_to_mapFragment)
         }

@@ -7,14 +7,14 @@ import java.io.ByteArrayOutputStream
 
 class GeofencesTypeConverter {
     @TypeConverter
-    fun toBitArray (bitmap: Bitmap?): ByteArray{
+    fun toBitArray (bitmap: Bitmap?): ByteArray?{
         val outputStream = ByteArrayOutputStream()
         bitmap?.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
         return outputStream.toByteArray()
     }
 
     @TypeConverter
-    fun toBitMap (byteArray: ByteArray): Bitmap{
-        return BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
+    fun toBitMap (byteArray: ByteArray?): Bitmap? {
+        return byteArray?.size?.let { BitmapFactory.decodeByteArray(byteArray, 0, it) }
     }
 }

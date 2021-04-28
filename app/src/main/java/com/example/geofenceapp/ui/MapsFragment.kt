@@ -79,6 +79,11 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapLongClickLis
             val dialog = SettingsDialog()
             dialog.show(childFragmentManager, null)
         }
+//        sharedViewModel.readValues(viewLifecycleOwner) //initializes value in the flow. without it,
+//        // the radius autmatically is the default radius of 500f
+        sharedViewModel.readDefaultRadius.observeOnce(viewLifecycleOwner, Observer { defaultRadius ->
+             val x= defaultRadius
+        })
         return binding.root
     }
 
@@ -195,6 +200,14 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapLongClickLis
                 11f
             else ->
                 10f
+//            500f-1.9f ->
+//                16f
+//            2f-4.9f ->
+//                13f
+//            5f-6f ->
+//                12f
+//            else ->
+//                10f
         }
     }
 
@@ -249,34 +262,30 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapLongClickLis
         }
     }
 
-    override fun onMapLongClick(location: LatLng?) {
-        if (Permissions.hasBackgroundLocationPosition(requireContext())){
-            if (location != null){
-                if (sharedViewModel.geoFencePrepared.value == true){
-                    Log.d("MapsFragment", "in geofence prepared")
+    override fun onMapLongClick(location: LatLng) {
+        if (Permissions.hasBackgroundLocationPosition(requireContext()) && activity!=null){
+                if (!legallyAdd) {
+                    Log.d("MapsFragment", "legallyAdd: $legallyAdd")
+                    Toast.makeText(context, "Error: Finishing previous geofence", Toast.LENGTH_SHORT).show()
+                }
+                else if (sharedViewModel.geoFencePrepared.value == true){
                     setUpGeofence(location)
                 }
-                else if (!legallyAdd) {
-                    Toast.makeText(context, "Error: please wait until next geofence is added", Toast.LENGTH_SHORT).show()
-                }
                 else{
+                    legallyAdd = false
                         Toast.makeText(
                             context,
                             "Creating a new geofence",
                             Toast.LENGTH_SHORT
                         ).show()
                         Log.d("MapsFragment", "in geofence not prepared")
-                        sharedViewModel.setVariablesForPreset(geoCoder, location, viewLifecycleOwner)
-                        sharedViewModel.geoFencePrepared.observeOnce(viewLifecycleOwner, {
-                            if (it){
-                                Log.d("MapsFragment","in observering thing about to call the good stuff")
-                                setUpGeofence(location)
-                            } else {
-                                Toast.makeText(context, "Error: please try another location", Toast.LENGTH_SHORT).show()
-                            }
-                        })
+                        sharedViewModel.setVariablesForPreset(geoCoder, location)
+                        if (sharedViewModel.geoFencePrepared.value == true) {
+                            setUpGeofence(location)
+                        } else {
+                            Toast.makeText(context, "Error: please try another location", Toast.LENGTH_SHORT).show()
+                        }
                     }
-                }
         }
         else {
             Permissions.requestBackgroundLocationPosition(this)
@@ -289,7 +298,6 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapLongClickLis
                 binding.addGeofenceFab.disable()
                 binding.settingsFab.disable()
                 binding.geofenceProgressBar.enable()
-                legallyAdd = false
                 map.uiSettings.apply { //so nobody can move map before screenshot
                     isZoomGesturesEnabled = false
                     isMyLocationButtonEnabled = false
@@ -299,6 +307,7 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapLongClickLis
 
                 drawMarker(location, sharedViewModel.geoName)
                 drawCircle(location, sharedViewModel.geoRadius, sharedViewModel.geoId)
+                Log.d("MapsFragment","radius is: ${sharedViewModel.geoRadius}")
                 zoomToGeofence(circle.center, circle.radius.toFloat())
 
                 delay(2500)
@@ -322,7 +331,6 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapLongClickLis
                 binding.addGeofenceFab.enable()
                 binding.settingsFab.enable()
                 binding.geofenceProgressBar.disable()
-
                 legallyAdd = true
             } else {
                 Toast.makeText(

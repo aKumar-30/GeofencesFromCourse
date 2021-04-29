@@ -19,7 +19,9 @@ class GeofenceEntity(
     val latitude: Double,
     val longitude: Double,
     val radius: Float,
-    val snapshot: Bitmap?
+    val snapshot: Bitmap?,
+    var numberEnters: Int,
+    var numberDwells: Int
 ): Parcelable {
     @IgnoredOnParcel
     @PrimaryKey(autoGenerate = true)

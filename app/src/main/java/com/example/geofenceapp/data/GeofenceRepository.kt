@@ -1,5 +1,7 @@
 package com.example.geofenceapp.data
 
+import androidx.lifecycle.LiveData
+import androidx.room.Query
 import dagger.hilt.android.scopes.ViewModelScoped
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
@@ -12,8 +14,18 @@ class GeofenceRepository @Inject constructor(private val geofenceDao: GeofenceDa
         return geofenceDao.readGeofencesWithId(currentGeoId)
     }
 
-    suspend fun updateGeofence(obj: GeofenceUpdate) {
-        return geofenceDao.updateGeofence(obj)
+    suspend fun updateGeofenceName(obj: GeofenceUpdateName) {
+        return geofenceDao.updateGeofenceName(obj)
+    }
+    suspend fun updateGeofenceEnters(obj: GeofenceUpdateEnters) {
+        return geofenceDao.updateGeofenceEnters(obj)
+    }
+    suspend fun updateGeofenceDwells(obj: GeofenceUpdateDwells) {
+        return geofenceDao.updateGeofenceDwells(obj)
+    }
+
+    fun getGeofenceById(id: Long): LiveData<GeofenceEntity> {
+        return geofenceDao.getGeofenceById(id)
     }
 
     suspend fun insertGeofence(geofenceEntity: GeofenceEntity){

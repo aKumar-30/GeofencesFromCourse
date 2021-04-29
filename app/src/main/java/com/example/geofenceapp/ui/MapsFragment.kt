@@ -19,6 +19,9 @@ import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.example.geofenceapp.R
 import com.example.geofenceapp.broadcastreceiver.GeofenceBroadcastReceiver
+import com.example.geofenceapp.data.GeofenceUpdateDwells
+import com.example.geofenceapp.data.GeofenceUpdateEnters
+import com.example.geofenceapp.data.GeofenceUpdateName
 import com.example.geofenceapp.databinding.FragmentMapsBinding
 import com.example.geofenceapp.util.ExtensionFunctions.disable
 import com.example.geofenceapp.util.ExtensionFunctions.enable
@@ -224,32 +227,64 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapLongClickLis
             if (it!=0.0){
                 sharedViewModel.readGeofencesWithQuery(it)
                 sharedViewModel.readGeofencesWithQuery?.observeOnce(viewLifecycleOwner, Observer{ entities->
-                    //change color of circle
-                    for (cCircle in allCircles) {
-                        if (cCircle.tag == entities[0].geoId){
-                            when (GeofenceBroadcastReceiver.currentGeofenceChange) {
-                                Geofence.GEOFENCE_TRANSITION_ENTER -> {
-                                    cCircle.fillColor = getColor(R.color.background_in_geofence)
-                                    cCircle.strokeColor= getColor(R.color.stroke_in_geofence)
-                                }
-                                Geofence.GEOFENCE_TRANSITION_EXIT ->{
-                                    cCircle.fillColor = getColor(R.color.background_out_geofence)
-                                    cCircle.strokeColor= getColor(R.color.stroke_out_geofence)
-                                }
-                                Geofence.GEOFENCE_TRANSITION_DWELL ->{
-                                    cCircle.fillColor = getColor(R.color.background_dwell_geofence)
-                                    cCircle.strokeColor= getColor(R.color.stroke_dwell_geofence)
-                                }
-                                else ->{
-                                    cCircle.fillColor = getColor(R.color.background_out_geofence)
-                                    cCircle.strokeColor= getColor(R.color.stroke_out_geofence)
-                                }
-                            }
+                    changeCircleColors(entities[0].geoId)
+                    when (GeofenceBroadcastReceiver.currentGeofenceChange) {
+                        Geofence.GEOFENCE_TRANSITION_ENTER -> {
+                            updateEnter(entities[0].geoId)
+                        }
+                        Geofence.GEOFENCE_TRANSITION_DWELL -> {
+                            updateDwell(entities[0].geoId)
                         }
                     }
                 })
             }
         }
+    }
+
+    private fun changeCircleColors(tag: Long) {
+        //change color of circle
+        for (cCircle in allCircles) {
+            if (cCircle.tag == tag){
+                when (GeofenceBroadcastReceiver.currentGeofenceChange) {
+                    Geofence.GEOFENCE_TRANSITION_ENTER -> {
+                        cCircle.fillColor = getColor(R.color.background_in_geofence)
+                        cCircle.strokeColor= getColor(R.color.stroke_in_geofence)
+                    }
+                    Geofence.GEOFENCE_TRANSITION_EXIT ->{
+                        cCircle.fillColor = getColor(R.color.background_out_geofence)
+                        cCircle.strokeColor= getColor(R.color.stroke_out_geofence)
+                    }
+                    Geofence.GEOFENCE_TRANSITION_DWELL ->{
+                        cCircle.fillColor = getColor(R.color.background_dwell_geofence)
+                        cCircle.strokeColor= getColor(R.color.stroke_dwell_geofence)
+                    }
+                    else ->{
+                        cCircle.fillColor = getColor(R.color.background_out_geofence)
+                        cCircle.strokeColor= getColor(R.color.stroke_out_geofence)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun updateEnter(geoId: Long) {
+        val geofenceUpdateEnter = GeofenceUpdateEnters()
+        geofenceUpdateEnter.id = geoId
+        sharedViewModel.getGeofenceById(geoId)
+        sharedViewModel.geofenceById?.observeOnce(viewLifecycleOwner, Observer {
+            geofenceUpdateEnter.enters = it.numberEnters++
+            sharedViewModel.updateGeofenceEnters(geofenceUpdateEnter)
+        })
+    }
+
+    private fun updateDwell(geoId: Long) {
+        val geofenceUpdateDwell = GeofenceUpdateDwells()
+        geofenceUpdateDwell.id = geoId
+        sharedViewModel.getGeofenceById(geoId)
+        sharedViewModel.geofenceById?.observeOnce(viewLifecycleOwner, Observer {
+            geofenceUpdateDwell.dwells = it.numberDwells++
+            sharedViewModel.updateGeofenceDwells(geofenceUpdateDwell)
+        })
     }
 
     private fun backFromGeofencesFragment() {

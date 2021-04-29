@@ -13,10 +13,7 @@ import android.provider.Settings
 import android.util.Log
 import androidx.lifecycle.*
 import com.example.geofenceapp.broadcastreceiver.GeofenceBroadcastReceiver
-import com.example.geofenceapp.data.DataStoreRepository
-import com.example.geofenceapp.data.GeofenceEntity
-import com.example.geofenceapp.data.GeofenceRepository
-import com.example.geofenceapp.data.GeofenceUpdate
+import com.example.geofenceapp.data.*
 import com.example.geofenceapp.util.Constants.PREFERENCE_DEFAULT_RADIUS_DEFAULT
 import com.example.geofenceapp.util.ExtensionFunctions.observeOnce
 import com.example.geofenceapp.util.Permissions
@@ -33,7 +30,6 @@ import com.google.maps.android.SphericalUtil
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.math.sqrt
@@ -172,6 +168,7 @@ private val geofenceRepository: GeofenceRepository
     }
     //Database
     val readGeofences: LiveData<MutableList<GeofenceEntity>> = geofenceRepository.readGeofences.asLiveData()
+    var geofenceById: LiveData<GeofenceEntity>? = null
     var readGeofencesWithQuery: LiveData<MutableList<GeofenceEntity>>? = null
 
      fun readGeofencesWithQuery(currentGeoId: Double){
@@ -191,9 +188,26 @@ private val geofenceRepository: GeofenceRepository
         }
     }
 
-    fun updateGeofence(obj: GeofenceUpdate) {
+    fun updateGeofenceName(obj: GeofenceUpdateName) {
         viewModelScope.launch (Dispatchers.IO){
-            geofenceRepository.updateGeofence(obj)
+            geofenceRepository.updateGeofenceName(obj)
+        }
+    }
+    fun updateGeofenceEnters(obj: GeofenceUpdateEnters) {
+        viewModelScope.launch (Dispatchers.IO){
+            geofenceRepository.updateGeofenceEnters(obj)
+        }
+    }
+    fun updateGeofenceDwells(obj: GeofenceUpdateDwells) {
+        viewModelScope.launch (Dispatchers.IO){
+            geofenceRepository.updateGeofenceDwells(obj)
+        }
+    }
+
+
+    fun getGeofenceById(id: Long) {
+        viewModelScope.launch (Dispatchers.IO) {
+            geofenceById = geofenceRepository.getGeofenceById(id)
         }
     }
 
@@ -288,7 +302,9 @@ private val geofenceRepository: GeofenceRepository
             location.latitude,
             location.longitude,
             geoRadius,
-            geoSnapshot
+            geoSnapshot,
+            0,
+            0
         )
         insertGeofence(geofenceEntity)
     }

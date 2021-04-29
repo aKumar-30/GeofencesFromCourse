@@ -1,5 +1,6 @@
 package com.example.geofenceapp.data
 
+import androidx.lifecycle.LiveData
 import androidx.room.*
 import kotlinx.coroutines.flow.Flow
 
@@ -13,33 +14,21 @@ interface GeofenceDao {
     suspend fun insertGeofence(geofenceEntity: GeofenceEntity)
 
     @Update(entity = GeofenceEntity::class)
-    suspend fun updateGeofence(obj: GeofenceUpdate)
-//    @RawQuery
-//    suspend fun readGeofencesWithId(query: SupportSQLiteQuery?): Flow<MutableList<GeofenceEntity>>?
-//
-//    suspend fun readGeofencesWithQuery(currentGeoId: Double): Flow<MutableList<GeofenceEntity>>?{
-//        // List of bind parameters
-//        val args: MutableList<Any> = ArrayList()
-//
-//        val queryString = "SELECT * FROM geofence_table WHERE geoId = ?%"
-//        args.add(currentGeoId);
-//
-//        val query = SimpleSQLiteQuery(queryString, args.toTypedArray())
-//        return readGeofencesWithId(query)
-//    }
+    suspend fun updateGeofenceName(obj: GeofenceUpdateName)
+
+    @Update(entity = GeofenceEntity::class)
+    suspend fun updateGeofenceEnters(obj: GeofenceUpdateEnters)
+
+    @Update(entity = GeofenceEntity::class)
+    suspend fun updateGeofenceDwells(obj: GeofenceUpdateDwells)
+
+    @Query("SELECT * FROM geofence_table WHERE id=:id LIMIT 1")
+    fun getGeofenceById(id: Long): LiveData<GeofenceEntity>
+
     @Query("SELECT * FROM geofence_table WHERE geoId= :geoId1")
     fun readGeofencesWithId(geoId1: Double): Flow<MutableList<GeofenceEntity>>
 
-//    suspend fun readGeofencesWithQuery(currentGeoId: Double): Flow<MutableList<GeofenceEntity>>?{
-//        // List of bind parameters
-//        val args: MutableList<Any> = ArrayList()
-//
-//        val queryString = "SELECT * FROM geofence_table WHERE geoId = ?%"
-//        args.add(currentGeoId);
-//
-//        val query = SimpleSQLiteQuery(queryString, args.toTypedArray())
-//        return readGeofencesWithId(query)
-//    }
+
     @Delete
     suspend fun deleteGeofence(geofenceEntity: GeofenceEntity)
 }

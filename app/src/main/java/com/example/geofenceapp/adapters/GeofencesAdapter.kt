@@ -11,7 +11,7 @@ import androidx.navigation.findNavController
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.example.geofenceapp.data.GeofenceEntity
-import com.example.geofenceapp.data.GeofenceUpdate
+import com.example.geofenceapp.data.GeofenceUpdateName
 import com.example.geofenceapp.databinding.GeofencesRowLayoutBinding
 import com.example.geofenceapp.ui.GeofencesFragmentDirections
 import com.example.geofenceapp.util.MyDiffUtil
@@ -75,10 +75,10 @@ class GeofencesAdapter (private val sharedViewModel: SharedViewModel): RecyclerV
                         holder.binding.nameEditTextView.inputType = InputType.TYPE_NULL
                         val text = holder.binding.nameEditTextView.text.toString()
                         if (text != geofenceEntities[position].name){
-                            val geofenceUpdate = GeofenceUpdate()
-                            geofenceUpdate.id = geofenceEntities[position].id
+                            val geofenceUpdate = GeofenceUpdateName()
+                            geofenceUpdate.id = geofenceEntities[position].id.toLong()
                             geofenceUpdate.name = holder.binding.nameEditTextView.text.toString()
-                            sharedViewModel.updateGeofence(geofenceUpdate)
+                            sharedViewModel.updateGeofenceName(geofenceUpdate)
                             geofenceEntities[position].name = text
                             // Only runs if there is a view that is currently focused
                         }

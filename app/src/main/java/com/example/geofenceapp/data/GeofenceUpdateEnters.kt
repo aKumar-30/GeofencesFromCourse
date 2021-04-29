@@ -4,9 +4,9 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 
 @Entity
-class GeofenceUpdate {
+class GeofenceUpdateEnters {
     @ColumnInfo(name="id")
-    var id: Int = 0
-    @ColumnInfo(name = "name")
-    var name: String = ""
+    var id: Long = 0
+    @ColumnInfo(name = "numberEnters")
+    var enters: Int = 0
 }

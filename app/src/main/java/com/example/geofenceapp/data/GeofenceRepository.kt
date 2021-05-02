@@ -10,7 +10,7 @@ import javax.inject.Inject
 class GeofenceRepository @Inject constructor(private val geofenceDao: GeofenceDao){
     val readGeofences: Flow<MutableList<GeofenceEntity>> = geofenceDao.readGeofences()
 
-    fun readGeofencesWithQuery(currentGeoId: Double): Flow<MutableList<GeofenceEntity>>{
+    fun readGeofencesWithQuery(currentGeoId: Long): Flow<MutableList<GeofenceEntity>>{
         return geofenceDao.readGeofencesWithId(currentGeoId)
     }
 

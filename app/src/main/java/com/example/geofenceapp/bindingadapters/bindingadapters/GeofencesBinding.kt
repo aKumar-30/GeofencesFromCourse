@@ -6,14 +6,11 @@ import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.core.content.ContextCompat
 import androidx.databinding.BindingAdapter
 import coil.load
 import com.example.geofenceapp.R
 import com.example.geofenceapp.data.GeofenceEntity
-import com.example.geofenceapp.util.ExtensionFunctions.disable
-import com.example.geofenceapp.util.ExtensionFunctions.enable
 
 @BindingAdapter("setVisibility")
 fun View.setVisibility(data: List<GeofenceEntity>){

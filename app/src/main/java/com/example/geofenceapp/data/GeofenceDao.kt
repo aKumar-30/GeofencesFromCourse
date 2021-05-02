@@ -25,8 +25,8 @@ interface GeofenceDao {
     @Query("SELECT * FROM geofence_table WHERE id=:id LIMIT 1")
     fun getGeofenceById(id: Long): LiveData<GeofenceEntity>
 
-    @Query("SELECT * FROM geofence_table WHERE geoId= :geoId1")
-    fun readGeofencesWithId(geoId1: Double): Flow<MutableList<GeofenceEntity>>
+    @Query("SELECT * FROM geofence_table WHERE geoId= :geoId1 LIMIT 1")
+    fun readGeofencesWithId(geoId1: Long): Flow<MutableList<GeofenceEntity>>
 
 
     @Delete

@@ -9,4 +9,8 @@ class GeofenceUpdateName {
     var id: Long = 0
     @ColumnInfo(name = "name")
     var name: String = ""
+    @ColumnInfo(name = "numberEnters")
+    var enters: Int = 0
+    @ColumnInfo(name = "numberDwells")
+    var dwells: Int = 0
 }

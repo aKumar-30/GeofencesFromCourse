@@ -161,17 +161,13 @@ private val geofenceRepository: GeofenceRepository
         Log.d("SharedViewModel", "readDefaultRadius: ${readDefaultRadius.value}")
        return  readDefaultRadius.value?: PREFERENCE_DEFAULT_RADIUS_DEFAULT
     }
-    fun readValues(viewLifecycleOwner: LifecycleOwner) {
-        readDefaultRadius.observeOnce(viewLifecycleOwner, Observer { defaultRadius ->
-            geoRadius = defaultRadius
-        })
-    }
+
     //Database
     val readGeofences: LiveData<MutableList<GeofenceEntity>> = geofenceRepository.readGeofences.asLiveData()
     var geofenceById: LiveData<GeofenceEntity>? = null
     var readGeofencesWithQuery: LiveData<MutableList<GeofenceEntity>>? = null
 
-     fun readGeofencesWithQuery(currentGeoId: Double){
+     fun readGeofencesWithQuery(currentGeoId: Long){
         viewModelScope.launch (Dispatchers.IO) {
             readGeofencesWithQuery = geofenceRepository.readGeofencesWithQuery(currentGeoId).asLiveData()
         }
@@ -253,7 +249,7 @@ private val geofenceRepository: GeofenceRepository
 
             geofencingClient.addGeofences(geofencingRequest, setPendingIntent(geoId.toInt())).run{
                 addOnSuccessListener {
-                    Log.d("Geofence", "successfully added geofence")
+                    Log.d("SharedViewModel" , "successfully STARTED geofence")
                 }
                 addOnCanceledListener {
                     Log.d("Geofence", "failed adding geofence")
@@ -270,6 +266,7 @@ private val geofenceRepository: GeofenceRepository
             geofencingClient.removeGeofences(setPendingIntent(geoIds.first().toInt()))
                 .addOnCompleteListener {
                     if (it.isSuccessful){
+                        Log.d("SharedViewModel", "successfully STOPPED geofence")
                         result.complete(true)
                     } else {
                         result.complete(false)

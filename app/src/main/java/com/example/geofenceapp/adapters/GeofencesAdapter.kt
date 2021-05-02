@@ -77,7 +77,9 @@ class GeofencesAdapter (private val sharedViewModel: SharedViewModel): RecyclerV
                         if (text != geofenceEntities[position].name){
                             val geofenceUpdate = GeofenceUpdateName()
                             geofenceUpdate.id = geofenceEntities[position].id.toLong()
-                            geofenceUpdate.name = holder.binding.nameEditTextView.text.toString()
+                            geofenceUpdate.name = text
+                            geofenceUpdate.dwells = geofenceEntities[position].numberDwells
+                            geofenceUpdate.enters = geofenceEntities[position].numberEnters
                             sharedViewModel.updateGeofenceName(geofenceUpdate)
                             geofenceEntities[position].name = text
                             // Only runs if there is a view that is currently focused

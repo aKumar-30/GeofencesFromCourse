@@ -19,8 +19,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.example.geofenceapp.R
 import com.example.geofenceapp.broadcastreceiver.GeofenceBroadcastReceiver
-import com.example.geofenceapp.data.GeofenceUpdateDwells
-import com.example.geofenceapp.data.GeofenceUpdateEnters
+import com.example.geofenceapp.data.GeofenceEntity
 import com.example.geofenceapp.data.GeofenceUpdateName
 import com.example.geofenceapp.databinding.FragmentMapsBinding
 import com.example.geofenceapp.util.ExtensionFunctions.disable
@@ -39,6 +38,7 @@ import com.google.android.gms.maps.model.*
 import com.vmadalin.easypermissions.EasyPermissions
 import com.vmadalin.easypermissions.dialogs.SettingsDialog
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -195,27 +195,27 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapLongClickLis
 
     private fun decideZoomLevel(): Float {
         return when (sharedViewModel.geoRadius){
-            500f ->
-                15f
-            2f ->
-                13f
-            5f ->
-                11f
-            else ->
-                10f
-//            500f-1.9f ->
-//                16f
-//            2f-4.9f ->
+//            500f ->
+//                15f
+//            2f ->
 //                13f
-//            5f-6f ->
-//                12f
+//            5f ->
+//                11f
 //            else ->
 //                10f
+            500f-1.9f ->
+                16f
+            2f-4.9f ->
+                13f
+            5f-6f ->
+                12f
+            else ->
+                10f
         }
     }
 
     private fun observeDatabase() {
-        sharedViewModel.readGeofences.observe(viewLifecycleOwner){ geofenceEntities->
+        sharedViewModel.readGeofences.observeOnce(viewLifecycleOwner){ geofenceEntities->
             map.clear()  //not efficient, use a list to keep track of what has been done already instead
             geofenceEntities.forEach{ geofence->
                 drawMarker(LatLng(geofence.latitude, geofence.longitude), geofence.name)
@@ -224,16 +224,26 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapLongClickLis
         }
         GeofenceBroadcastReceiver.geofenceChanges.observe(viewLifecycleOwner) {
             Log.d("MapsFragment", "observing changes and received double: $it")
-            if (it!=0.0){
+            GlobalScope.launch {
+                delay(50000)
+                onMapReady(map)
+            }
+            if (it!=0.0.toLong()){
+                val x = GeofenceBroadcastReceiver.currentGeofenceChange
                 sharedViewModel.readGeofencesWithQuery(it)
                 sharedViewModel.readGeofencesWithQuery?.observeOnce(viewLifecycleOwner, Observer{ entities->
-                    changeCircleColors(entities[0].geoId)
-                    when (GeofenceBroadcastReceiver.currentGeofenceChange) {
-                        Geofence.GEOFENCE_TRANSITION_ENTER -> {
-                            updateEnter(entities[0].geoId)
-                        }
-                        Geofence.GEOFENCE_TRANSITION_DWELL -> {
-                            updateDwell(entities[0].geoId)
+                    if (entities.isNotEmpty()){
+                        changeCircleColors(entities[0].geoId, x)
+                        Log.d("MapsFragment", "between calls: ${entities[0].geoId}")
+                        when (x) {
+                            Geofence.GEOFENCE_TRANSITION_ENTER -> {
+                                Log.d("MapsFragment", "going to updateEnter")
+                                updateEnter(entities[0])
+                            }
+                            Geofence.GEOFENCE_TRANSITION_DWELL -> {
+                                Log.d("MapsFragment", "going to updateDwell")
+                                updateDwell(entities[0])
+                            }
                         }
                     }
                 })
@@ -241,50 +251,51 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapLongClickLis
         }
     }
 
-    private fun changeCircleColors(tag: Long) {
+    private fun changeCircleColors(tag: Long, x: Int?) {
         //change color of circle
         for (cCircle in allCircles) {
+            Log.d("MapsFragment", "there is 1 circle in cCircle")
             if (cCircle.tag == tag){
-                when (GeofenceBroadcastReceiver.currentGeofenceChange) {
+                Log.d("MapsFragment", "there is 1 circle with matchning tag in cCircle")
+                when (x) {
                     Geofence.GEOFENCE_TRANSITION_ENTER -> {
+                        Log.d("MapsFragment", "in enter")
                         cCircle.fillColor = getColor(R.color.background_in_geofence)
                         cCircle.strokeColor= getColor(R.color.stroke_in_geofence)
                     }
                     Geofence.GEOFENCE_TRANSITION_EXIT ->{
+                        Log.d("MapsFragment", "in exit")
                         cCircle.fillColor = getColor(R.color.background_out_geofence)
                         cCircle.strokeColor= getColor(R.color.stroke_out_geofence)
                     }
-                    Geofence.GEOFENCE_TRANSITION_DWELL ->{
+                    Geofence.GEOFENCE_TRANSITION_DWELL ->   {
+                        Log.d("MapsFragment", "in dwell")
                         cCircle.fillColor = getColor(R.color.background_dwell_geofence)
                         cCircle.strokeColor= getColor(R.color.stroke_dwell_geofence)
-                    }
-                    else ->{
-                        cCircle.fillColor = getColor(R.color.background_out_geofence)
-                        cCircle.strokeColor= getColor(R.color.stroke_out_geofence)
                     }
                 }
             }
         }
     }
 
-    private fun updateEnter(geoId: Long) {
-        val geofenceUpdateEnter = GeofenceUpdateEnters()
-        geofenceUpdateEnter.id = geoId
-        sharedViewModel.getGeofenceById(geoId)
-        sharedViewModel.geofenceById?.observeOnce(viewLifecycleOwner, Observer {
-            geofenceUpdateEnter.enters = it.numberEnters++
-            sharedViewModel.updateGeofenceEnters(geofenceUpdateEnter)
-        })
+    private fun updateEnter(entity: GeofenceEntity) {
+        val geofenceUpdate = GeofenceUpdateName()
+        geofenceUpdate.id = entity.id.toLong()
+        val x = entity.numberEnters++
+        geofenceUpdate.name = entity.name
+        geofenceUpdate.enters = x
+        geofenceUpdate.dwells = entity.numberDwells
+        sharedViewModel.updateGeofenceName(geofenceUpdate)
     }
 
-    private fun updateDwell(geoId: Long) {
-        val geofenceUpdateDwell = GeofenceUpdateDwells()
-        geofenceUpdateDwell.id = geoId
-        sharedViewModel.getGeofenceById(geoId)
-        sharedViewModel.geofenceById?.observeOnce(viewLifecycleOwner, Observer {
-            geofenceUpdateDwell.dwells = it.numberDwells++
-            sharedViewModel.updateGeofenceDwells(geofenceUpdateDwell)
-        })
+    private fun updateDwell(entity: GeofenceEntity) {
+        val geofenceUpdate = GeofenceUpdateName()
+        geofenceUpdate.id = entity.id.toLong()
+        geofenceUpdate.name = entity.name
+        geofenceUpdate.enters = entity.numberEnters
+        val x = entity.numberDwells++
+        geofenceUpdate.dwells = x
+        sharedViewModel.updateGeofenceName(geofenceUpdate)
     }
 
     private fun backFromGeofencesFragment() {

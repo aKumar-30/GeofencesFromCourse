@@ -20,8 +20,8 @@ import com.google.android.gms.location.GeofencingEvent
 
 class GeofenceBroadcastReceiver: BroadcastReceiver() {
     companion object {
-        private var _geofenceChanged = MutableLiveData(0.0)
-         val geofenceChanges: LiveData<Double> get() = _geofenceChanged
+        private var _geofenceChanged = MutableLiveData(0.0.toLong())
+         val geofenceChanges: LiveData<Long> get() = _geofenceChanged
         var currentGeofenceChange: Int? = null
     }
 
@@ -33,7 +33,7 @@ class GeofenceBroadcastReceiver: BroadcastReceiver() {
             Log.e("BroadcastReceiver", errorMessage)
             return
         }
-        _geofenceChanged.value = geofencingEvent.triggeringGeofences[0].requestId.toDouble()
+        _geofenceChanged.value = geofencingEvent.triggeringGeofences[0].requestId.toLong()
         Log.d("BroadcastReceiver", "the new value os ${geofenceChanges.value}")
 
         when (geofencingEvent.geofenceTransition){

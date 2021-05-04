@@ -26,7 +26,7 @@ class GeofencesFragment : Fragment(){
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentGeofencesBinding.inflate(inflater, container, false)
-        binding.sharedViewModel = sharedViewModel
+        binding.mAdapter = geofenceAdapter
 
         setUpToolbar()
         setUpRecyclerView()

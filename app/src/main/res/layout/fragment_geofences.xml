@@ -5,8 +5,8 @@
 
     <data>
         <variable
-            name="sharedViewModel"
-            type="com.example.geofenceapp.viewmodel.SharedViewModel" />
+            name="mAdapter"
+            type="com.example.geofenceapp.adapters.GeofencesAdapter"/>
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -46,7 +46,7 @@
             android:layout_height="120dp"
             android:alpha="0.4"
             android:src="@drawable/ic_empty_hourglass"
-            setVisibility="@{sharedViewModel.readGeofences}"
+            setVisibility="@{mAdapter.geofenceEntities}"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.5"
@@ -63,7 +63,7 @@
             android:text="@string/no_geofence_found"
             android:textSize="18sp"
             android:textStyle="bold"
-            setVisibility="@{sharedViewModel.readGeofences}"
+            setVisibility="@{mAdapter.geofenceEntities}"
             app:layout_constraintEnd_toEndOf="@+id/empty_imageView"
             app:layout_constraintStart_toStartOf="@+id/empty_imageView"
             app:layout_constraintTop_toBottomOf="@+id/empty_imageView" />

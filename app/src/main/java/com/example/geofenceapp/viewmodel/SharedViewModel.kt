@@ -118,7 +118,7 @@ private val geofenceRepository: GeofenceRepository
                         x
                 } else if(address[0].locality!=null){
                     val x = "Geofence " + address[0].locality
-                    Log.d("SharedVIewModel","x is $x")
+                    Log.d("SharedViewModel","x is $x")
                     if (x.length > 25)
                         x.substring(0, 25)
                     else

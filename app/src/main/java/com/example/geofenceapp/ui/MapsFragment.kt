@@ -203,11 +203,11 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapLongClickLis
 //                11f
 //            else ->
 //                10f
-            500f-1.9f ->
-                16f
-            2f-4.9f ->
+            500f ->
+                15f
+            2000f-4900f ->
                 13f
-            5f-6f ->
+            5000f-6000f ->
                 12f
             else ->
                 10f
@@ -224,10 +224,6 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapLongClickLis
         }
         GeofenceBroadcastReceiver.geofenceChanges.observe(viewLifecycleOwner) {
             Log.d("MapsFragment", "observing changes and received double: $it")
-            GlobalScope.launch {
-                delay(50000)
-                onMapReady(map)
-            }
             if (it!=0.0.toLong()){
                 val x = GeofenceBroadcastReceiver.currentGeofenceChange
                 sharedViewModel.readGeofencesWithQuery(it)

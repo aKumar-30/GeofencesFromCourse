@@ -33,27 +33,29 @@ class GeofenceBroadcastReceiver: BroadcastReceiver() {
             Log.e("BroadcastReceiver", errorMessage)
             return
         }
-        _geofenceChanged.value = geofencingEvent.triggeringGeofences[0].requestId.toLong()
-        Log.d("BroadcastReceiver", "the new value os ${geofenceChanges.value}")
 
+        var x: Int? = null
         when (geofencingEvent.geofenceTransition){
             Geofence.GEOFENCE_TRANSITION_ENTER->{
-                currentGeofenceChange = Geofence.GEOFENCE_TRANSITION_ENTER
+                x = Geofence.GEOFENCE_TRANSITION_ENTER
                 displayNotification(context, "Geofence ENTER")
             }
             Geofence.GEOFENCE_TRANSITION_DWELL ->{
-                currentGeofenceChange = Geofence.GEOFENCE_TRANSITION_DWELL
+                x = Geofence.GEOFENCE_TRANSITION_DWELL
                 displayNotification(context, "Geofence DWELL")
             }
             Geofence.GEOFENCE_TRANSITION_EXIT -> {
-                currentGeofenceChange = Geofence.GEOFENCE_TRANSITION_EXIT
+                x = Geofence.GEOFENCE_TRANSITION_EXIT
                 displayNotification(context, "Geofence EXIT")
             }
             else -> {
-                currentGeofenceChange = null
+                x = null
                 displayNotification(context, "Invalid type")
             }
         }
+        _geofenceChanged.value = geofencingEvent.triggeringGeofences[0].requestId.toLong()
+        currentGeofenceChange = x
+        Log.d("BroadcastReceiver", "the new value os ${geofenceChanges.value}")
     }
 
     private fun displayNotification (context: Context, geofenceTransition: String){

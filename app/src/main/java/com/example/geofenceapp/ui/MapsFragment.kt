@@ -18,14 +18,17 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.example.geofenceapp.R
+import com.example.geofenceapp.adapters.InfoWindowAdapter
 import com.example.geofenceapp.broadcastreceiver.GeofenceBroadcastReceiver
 import com.example.geofenceapp.data.GeofenceEntity
 import com.example.geofenceapp.data.GeofenceUpdateName
 import com.example.geofenceapp.databinding.FragmentMapsBinding
+import com.example.geofenceapp.util.Constants
 import com.example.geofenceapp.util.ExtensionFunctions.disable
 import com.example.geofenceapp.util.ExtensionFunctions.enable
 import com.example.geofenceapp.util.ExtensionFunctions.hide
 import com.example.geofenceapp.util.ExtensionFunctions.observeOnce
+import com.example.geofenceapp.util.ExtensionFunctions.reverseParse
 import com.example.geofenceapp.util.ExtensionFunctions.show
 import com.example.geofenceapp.util.Permissions
 import com.example.geofenceapp.viewmodel.SharedViewModel
@@ -35,22 +38,27 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
+import com.google.maps.DirectionsApi
+import com.google.maps.GeoApiContext
+import com.google.maps.android.PolyUtil
+import com.google.maps.model.DirectionsResult
+import com.google.maps.model.DirectionsRoute
+import com.google.maps.model.TravelMode
 import com.vmadalin.easypermissions.EasyPermissions
 import com.vmadalin.easypermissions.dialogs.SettingsDialog
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
-class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapLongClickListener, EasyPermissions.PermissionCallbacks, GoogleMap.SnapshotReadyCallback, GoogleMap.OnMyLocationButtonClickListener{
+class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapLongClickListener, EasyPermissions.PermissionCallbacks,
+    GoogleMap.SnapshotReadyCallback, GoogleMap.OnMyLocationButtonClickListener, InfoWindowAdapter.OnShowRoutePressedCallback{
 
     private var _binding: FragmentMapsBinding ?=null
     private val binding get() = _binding!!
-
     private val args by navArgs<MapsFragmentArgs>()
-
     private lateinit var map: GoogleMap
+    private var currentLocation = LatLng(Constants.DEFAULT_LATITUDE, Constants.DEFAULT_LONGITUDE)
 
     private lateinit var circle: Circle
     private var allCircles: MutableList<Circle> = mutableListOf()
@@ -59,6 +67,8 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapLongClickLis
     private lateinit var geoCoder: Geocoder
 
     private var legallyAdd = true
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         geoCoder = Geocoder(requireContext())
@@ -84,9 +94,11 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapLongClickLis
         }
 //        sharedViewModel.readValues(viewLifecycleOwner) //initializes value in the flow. without it,
 //        // the radius autmatically is the default radius of 500f
-        sharedViewModel.readDefaultRadius.observeOnce(viewLifecycleOwner, Observer { defaultRadius ->
-             val x= defaultRadius
-        })
+        sharedViewModel.readDefaultRadius.observeOnce(
+            viewLifecycleOwner,
+            Observer { defaultRadius ->
+                val x = defaultRadius
+            })
         return binding.root
     }
 
@@ -96,7 +108,7 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapLongClickLis
         mapFragment?.getMapAsync(this)
     }
 
-    @SuppressLint("MissingPermission")
+    @SuppressLint("MissingPermission", "PotentialBehaviorOverride")
     override fun onMapReady(googleMap: GoogleMap?) {
         map = googleMap!!
         binding.geofenceProgressBar.disable()
@@ -131,6 +143,7 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapLongClickLis
 //        map.setPadding(0, 0,1200,0)
 
         map.setOnMapLongClickListener(this)
+        map.setInfoWindowAdapter(InfoWindowAdapter(requireActivity(), this))
         map.uiSettings.apply {
             isMyLocationButtonEnabled = true
             isMapToolbarEnabled = false
@@ -142,6 +155,70 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapLongClickLis
         backFromGeofencesFragment()
     }
 
+    private fun createRoute(location: LatLng) {
+        Log.d("MapsFragment", "locationL latiude ${currentLocation.latitude} longitude ${currentLocation.longitude}")
+        val origin = com.google.maps.model.LatLng(currentLocation.latitude, currentLocation.longitude)
+        val dest = com.google.maps.model.LatLng(location.latitude, location.longitude)
+
+        val apiRequest = DirectionsApi.newRequest(getGeoContext())
+            .origin(origin)
+            .destination(dest)
+            .mode(TravelMode.DRIVING)
+            .setCallback(object : com.google.maps.PendingResult.Callback<DirectionsResult> {
+                override fun onResult(result: DirectionsResult) {
+                    activity?.runOnUiThread {
+                        if (result.routes.isNotEmpty() && result.routes[0]!=null) {
+                            drawRoute(result.routes[0])
+                            Log.d("Maps Fragment", "Call Success")
+                        }
+                    }
+//                    val directionsRenderer = Renderer(map, context, MarkerManager(map), PolygonManager(map), PolylineManager(map), GroundOverlayManager(map), null)
+//                    directionsRenderer.map = map
+                }
+                override fun onFailure(e: Throwable) {
+                    Log.d("Maps Fragment", "Call fail + $e")
+                }
+            })
+//        val directionsRenderer = Renderer(map, context, MarkerManager(map), PolygonManager(map), PolylineManager(map), GroundOverlayManager(map), null)
+//        directionsRenderer.map = map
+    }
+
+    override fun onShowBackPressed(latLngEncoded: String) {
+        sharedViewModel.getCurrentLocation(requireActivity())
+        sharedViewModel.currentLocation.observe(viewLifecycleOwner, {
+            Log.d("MapsFragment", "currentLocation observing")
+            currentLocation = it
+            val endLocation = reverseParse(latLngEncoded)
+            if (endLocation != null)
+                createRoute(endLocation)
+        })
+    }
+
+    private var visibleRouteLine: Polyline?  = null
+    private var visibleMarker: Marker? = null
+    private fun drawRoute(directionsRoute: DirectionsRoute) {
+        //delete previous route
+        visibleMarker?.remove()
+        visibleRouteLine?.remove()
+
+        val decodedLine = PolyUtil.decode(directionsRoute.overviewPolyline.encodedPath)
+        visibleRouteLine = map.addPolyline(
+            PolylineOptions().addAll(decodedLine)
+                .color(ContextCompat.getColor(requireContext(), R.color.blue_700))
+                .geodesic(true)
+                .width(12f))
+        visibleMarker = map.addMarker(
+            MarkerOptions().position(decodedLine[0])
+                .draggable(false)
+                .title("start")
+        )
+    }
+
+    private fun getGeoContext() : GeoApiContext {
+        return GeoApiContext.Builder()
+            .apiKey(getString(R.string.google_maps_key))
+            .build()
+    }
     private fun toDoAtStart() {
         if(sharedViewModel.geoFenceReady){
             sharedViewModel.geoFenceReady = false
@@ -205,9 +282,9 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapLongClickLis
 //                10f
             500f ->
                 15f
-            2000f-4900f ->
+            2000f - 4900f ->
                 13f
-            5000f-6000f ->
+            5000f - 6000f ->
                 12f
             else ->
                 10f
@@ -219,7 +296,11 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapLongClickLis
             map.clear()  //not efficient, use a list to keep track of what has been done already instead
             geofenceEntities.forEach{ geofence->
                 drawMarker(LatLng(geofence.latitude, geofence.longitude), geofence.name)
-                drawCircle(LatLng(geofence.latitude, geofence.longitude), geofence.radius, geofence.geoId)
+                drawCircle(
+                    LatLng(geofence.latitude, geofence.longitude),
+                    geofence.radius,
+                    geofence.geoId
+                )
             }
         }
         GeofenceBroadcastReceiver.geofenceChanges.observe(viewLifecycleOwner) {
@@ -227,22 +308,24 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapLongClickLis
             if (it!=0.0.toLong()){
                 val x = GeofenceBroadcastReceiver.currentGeofenceChange
                 sharedViewModel.readGeofencesWithQuery(it)
-                sharedViewModel.readGeofencesWithQuery?.observeOnce(viewLifecycleOwner, Observer{ entities->
-                    if (entities.isNotEmpty()){
-                        changeCircleColors(entities[0].geoId, x)
-                        Log.d("MapsFragment", "between calls: ${entities[0].geoId}")
-                        when (x) {
-                            Geofence.GEOFENCE_TRANSITION_ENTER -> {
-                                Log.d("MapsFragment", "going to updateEnter")
-                                updateEnter(entities[0])
-                            }
-                            Geofence.GEOFENCE_TRANSITION_DWELL -> {
-                                Log.d("MapsFragment", "going to updateDwell")
-                                updateDwell(entities[0])
+                sharedViewModel.readGeofencesWithQuery?.observeOnce(
+                    viewLifecycleOwner,
+                    Observer { entities ->
+                        if (entities.isNotEmpty()) {
+                            changeCircleColors(entities[0].geoId, x)
+                            Log.d("MapsFragment", "between calls: ${entities[0].geoId}")
+                            when (x) {
+                                Geofence.GEOFENCE_TRANSITION_ENTER -> {
+                                    Log.d("MapsFragment", "going to updateEnter")
+                                    updateEnter(entities[0])
+                                }
+                                Geofence.GEOFENCE_TRANSITION_DWELL -> {
+                                    Log.d("MapsFragment", "going to updateDwell")
+                                    updateDwell(entities[0])
+                                }
                             }
                         }
-                    }
-                })
+                    })
             }
         }
     }
@@ -257,17 +340,17 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapLongClickLis
                     Geofence.GEOFENCE_TRANSITION_ENTER -> {
                         Log.d("MapsFragment", "in enter")
                         cCircle.fillColor = getColor(R.color.background_in_geofence)
-                        cCircle.strokeColor= getColor(R.color.stroke_in_geofence)
+                        cCircle.strokeColor = getColor(R.color.stroke_in_geofence)
                     }
-                    Geofence.GEOFENCE_TRANSITION_EXIT ->{
+                    Geofence.GEOFENCE_TRANSITION_EXIT -> {
                         Log.d("MapsFragment", "in exit")
                         cCircle.fillColor = getColor(R.color.background_out_geofence)
-                        cCircle.strokeColor= getColor(R.color.stroke_out_geofence)
+                        cCircle.strokeColor = getColor(R.color.stroke_out_geofence)
                     }
-                    Geofence.GEOFENCE_TRANSITION_DWELL ->   {
+                    Geofence.GEOFENCE_TRANSITION_DWELL -> {
                         Log.d("MapsFragment", "in dwell")
                         cCircle.fillColor = getColor(R.color.background_dwell_geofence)
-                        cCircle.strokeColor= getColor(R.color.stroke_dwell_geofence)
+                        cCircle.strokeColor = getColor(R.color.stroke_dwell_geofence)
                     }
                 }
             }
@@ -308,7 +391,11 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapLongClickLis
         if (Permissions.hasBackgroundLocationPosition(requireContext()) && activity!=null){
                 if (!legallyAdd) {
                     Log.d("MapsFragment", "legallyAdd: $legallyAdd")
-                    Toast.makeText(context, "Error: Finishing previous geofence", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        context,
+                        "Error: Finishing previous geofence",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
                 else if (sharedViewModel.geoFencePrepared.value == true){
                     setUpGeofence(location)
@@ -325,7 +412,11 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapLongClickLis
                         if (sharedViewModel.geoFencePrepared.value == true) {
                             setUpGeofence(location)
                         } else {
-                            Toast.makeText(context, "Error: please try another location", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                context,
+                                "Error: please try another location",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                     }
         }
@@ -349,7 +440,8 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapLongClickLis
 
                 drawMarker(location, sharedViewModel.geoName)
                 drawCircle(location, sharedViewModel.geoRadius, sharedViewModel.geoId)
-                Log.d("MapsFragment","radius is: ${sharedViewModel.geoRadius}")
+
+                Log.d("MapsFragment", "radius is: ${sharedViewModel.geoRadius}")
                 zoomToGeofence(circle.center, circle.radius.toFloat())
 
                 delay(2500)
@@ -385,9 +477,11 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapLongClickLis
     }
 
     private fun drawMarker(location: LatLng, name: String) {
+        val descriptionParsed: String = "${location.latitude}, ${location.longitude}"
         map.addMarker(
             MarkerOptions().position(location).title(name)
                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+                .snippet(descriptionParsed)
         )
     }
 

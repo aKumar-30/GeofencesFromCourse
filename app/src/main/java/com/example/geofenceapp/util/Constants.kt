@@ -15,4 +15,7 @@ object Constants {
     const val NOTIFICATION_CHANNEL_ID = "geofence_transition_id"
     const val NOTIFICATION_CHANNEL_NAME = "geofence_notification"
     const val NOTIFICATION_ID = 3
+
+    const val DEFAULT_LATITUDE = 37.12419
+    const val DEFAULT_LONGITUDE = -121.98828
 }

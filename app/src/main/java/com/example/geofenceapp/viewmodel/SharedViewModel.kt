@@ -1,12 +1,14 @@
 package com.example.geofenceapp.viewmodel
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.app.Application
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.location.Geocoder
+import android.location.Location
 import android.location.LocationManager
 import android.os.Build
 import android.provider.Settings
@@ -14,10 +16,13 @@ import android.util.Log
 import androidx.lifecycle.*
 import com.example.geofenceapp.broadcastreceiver.GeofenceBroadcastReceiver
 import com.example.geofenceapp.data.*
+import com.example.geofenceapp.util.Constants.DEFAULT_LATITUDE
+import com.example.geofenceapp.util.Constants.DEFAULT_LONGITUDE
 import com.example.geofenceapp.util.Constants.PREFERENCE_DEFAULT_RADIUS_DEFAULT
 import com.example.geofenceapp.util.ExtensionFunctions.observeOnce
 import com.example.geofenceapp.util.Permissions
 import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingRequest
 import com.google.android.gms.location.LocationServices
@@ -40,6 +45,9 @@ private val dataStoreRepository: DataStoreRepository,
 private val geofenceRepository: GeofenceRepository
 ): AndroidViewModel(application){
     val app = application
+    var _currentLocation = MutableLiveData(LatLng(DEFAULT_LATITUDE, DEFAULT_LONGITUDE)) //TODO: Start directions from custom popup fom original marker
+    val currentLocation get()=_currentLocation
+
     private var geofencingClient = LocationServices.getGeofencingClient(app.applicationContext)
 
     var geoCountryCode = ""
@@ -306,6 +314,19 @@ private val geofenceRepository: GeofenceRepository
         insertGeofence(geofenceEntity)
     }
 
+
+    @SuppressLint("MissingPermission")
+    fun getCurrentLocation(activity: Activity){
+        val fusedLocationClient: FusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(activity)
+        fusedLocationClient.lastLocation
+            .addOnSuccessListener { location : Location? ->
+                // Got last known location. In some rare situations this can be null.
+                if (location!=null) {
+                    Log.d("MapsFragment", "location is not nill: ${location.latitude} ${location.longitude}")
+                    currentLocation.value = LatLng(location.latitude, location.longitude)
+                }
+            }
+    }
 
     fun checkDeviceLocationSettings(context: Context): Boolean{
         return if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
